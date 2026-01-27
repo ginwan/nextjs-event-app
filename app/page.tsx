@@ -5,8 +5,9 @@ import { IEvent } from '@/database';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
 const Page = async () => {
   const response = await fetch(`${BASE_URL}/api/events`);
-  const events = await response.json();
+  const { events } = await response.json();
   // console.log("🚀 ~ Page ~ events:", events)
+  // if (!events) return notFound()
 
   return (
     <section>
@@ -20,9 +21,9 @@ const Page = async () => {
 
         <ul className='events'>
           {
-            Array.isArray(events) && events.length > 0 &&
-            events.map((event: IEvent, i: number) => (
-              <li key={i} className='list-none'>
+            events && events.length > 0 &&
+            events.map((event: IEvent) => (
+              <li key={event.title} className='list-none'>
                 <EventCard {...event} />
               </li>
             ))
