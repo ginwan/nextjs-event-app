@@ -1,3 +1,8 @@
+import BookEvents from "@/components/BookEvents";
+import EventCard from "@/components/EventCard";
+import { IEvent } from "@/database";
+import { getSimilarEventsBySlug } from "@/lib/actions/events.actions";
+import { cacheLife } from "next/cache";
 import Image from "next/image"
 import { notFound } from "next/navigation"
 
@@ -26,13 +31,15 @@ const EventAgenda = ({ agenda }: { agenda: string[] }) => (
 // Event tags reusable component
 const EventTags = ({ tags }: { tags: string[] }) => (
     <div className="flex flex-row gap-1.5 flex-wrap mt-4">
-            {tags.map((tag, index) => (
-                <div className="pill" key={index}>{tag}</div>
-            ))}
+        {tags.map((tag, index) => (
+            <div className="pill" key={index}>{tag}</div>
+        ))}
     </div>
 )
 
 const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
+    "use cache";
+    cacheLife('hours');
     const { slug } = await params
     const request = await fetch(`${BASE_URL}/api/events/${slug}`)
     const { event: {
@@ -48,6 +55,11 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
         organizer,
         tags
     } } = await request.json()
+    const bookings = 10;
+
+    // No need to fetch request
+    const similarEvents: IEvent[] = await getSimilarEventsBySlug(slug)
+    console.log("🚀 ~ EventDetailsPage ~ similarEvents:", similarEvents)
 
 
     if (!description) return notFound()
@@ -59,7 +71,7 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
                 <p className="mt-2">{description}</p>
             </div>
 
-            <div>
+            <div className="details">
                 {/* Left Side - Event Content */}
                 <div className="content">
                     <Image src={image} alt="Event Banner" width={800} height={800} className="banner" />
@@ -78,20 +90,49 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
                         <EventDetailsItems icon="/icons/audience.svg" alt="audience" label={audience} />
                     </section>
 
-                    <EventAgenda agenda={JSON.parse(agenda[0])} />
+                    <EventAgenda agenda={agenda} />
 
                     <section>
                         <h2>About the Organizer</h2>
                         <p>{organizer}</p>
                     </section>
 
-                    <EventTags tags={JSON.parse(tags[0])} />
+                    <EventTags tags={tags} />
                 </div>
 
                 {/* Right Side - Booking Form */}
-                <aside className="booking">
-                    <p className="text-lg font-semibold">Book Event</p>
-                </aside>
+                <div className="booking">
+                    <div className="signup-card">
+                        <h2>Book Your Spot</h2>
+                        {
+                            bookings > 0 ?
+                                <p className="text-sm">Join {bookings} people who have already booked their spot</p> :
+                                <p className="text-sm">Be the first to book your spot</p>
+                        }
+
+                        <BookEvents />
+                    </div>
+                </div>
+            </div>
+
+            {/* Similar Events */}
+            <div className="flex w-full flex-col gap-4 pt-20">
+                <h2>Similar Events</h2>
+                <div className="events">
+                    {
+                        similarEvents.length > 0 && similarEvents.map((event: IEvent) => (
+                            <EventCard
+                                key={event.title}
+                                title={event.title}
+                                image={event.image}
+                                slug={event.slug}
+                                location={event.location}
+                                date={event.date}
+                                time={event.time}
+                            />
+                        ))
+                    }
+                </div>
             </div>
         </section>
     )
