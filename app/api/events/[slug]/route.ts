@@ -8,6 +8,17 @@ interface RouteParams {
     }>;
 }
 
+/**
+ * Handle GET requests to fetch an Event by its route slug.
+ *
+ * @param req - Incoming Next.js request object.
+ * @param params - An object (possibly a Promise) that resolves to route parameters; must contain a `slug` string identifying the event.
+ * @returns A NextResponse with JSON:
+ * - Status 200: `{ message: "Event fetched successfully", event }` when the event is found.
+ * - Status 404: `{ message: "Event not found" }` when no event matches the slug.
+ * - Status 400: `{ message: "Invalid or missing slug parameter" }` for missing/invalid slug.
+ * - Status 500: `{ message: "Failed to fetch event", error }` on internal errors.
+ */
 export async function GET(
     req: NextRequest,
     { params }: RouteParams
